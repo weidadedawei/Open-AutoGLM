@@ -7,13 +7,17 @@ Usage:
 
 Environment Variables:
     PHONE_AGENT_BASE_URL: Model API base URL (default: http://localhost:8000/v1)
-    PHONE_AGENT_MODEL: Model name (default: autoglm-phone-9b)
+    PHONE_AGENT_MODEL:    model_name: str = "zai-org/AutoGLM-Phone-9B")
     PHONE_AGENT_MAX_STEPS: Maximum steps per task (default: 100)
     PHONE_AGENT_DEVICE_ID: ADB device ID for multi-device setups
 """
 
 import argparse
 import os
+
+# Suppress tokenizers parallelism warning before importing transformers/tokenizers
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import shutil
 import subprocess
 import sys
@@ -286,6 +290,12 @@ Examples:
 
     # Model options
     parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Run using local MLX model (macOS only)",
+    )
+
+    parser.add_argument(
         "--base-url",
         type=str,
         default=os.getenv("PHONE_AGENT_BASE_URL", "http://localhost:8000/v1"),
@@ -295,7 +305,7 @@ Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default=os.getenv("PHONE_AGENT_MODEL", "autoglm-phone-9b"),
+        default=os.getenv("PHONE_AGENT_MODEL", "zai-org/AutoGLM-Phone-9B"),
         help="Model name",
     )
 
@@ -461,14 +471,16 @@ def main():
     if not check_system_requirements():
         sys.exit(1)
 
-    # Check model API connectivity and model availability
-    if not check_model_api(args.base_url, args.model):
-        sys.exit(1)
+    # Check model API connectivity and model availability (skip if local)
+    if not args.local:
+        if not check_model_api(args.base_url, args.model):
+            sys.exit(1)
 
     # Create configurations
     model_config = ModelConfig(
         base_url=args.base_url,
         model_name=args.model,
+        device="local" if args.local else "api",
     )
 
     agent_config = AgentConfig(

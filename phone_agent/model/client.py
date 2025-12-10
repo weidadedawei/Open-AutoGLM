@@ -18,6 +18,7 @@ class ModelConfig:
     temperature: float = 0.0
     top_p: float = 0.85
     frequency_penalty: float = 0.2
+    device: str = "api"  # "api" or "local"
     extra_body: dict[str, Any] = field(
         default_factory=lambda: {"skip_special_tokens": False}
     )
@@ -42,7 +43,16 @@ class ModelClient:
 
     def __init__(self, config: ModelConfig | None = None):
         self.config = config or ModelConfig()
-        self.client = OpenAI(base_url=self.config.base_url, api_key=self.config.api_key)
+        
+        if self.config.device == "local":
+            try:
+                from .mlx_client import MLXModelClient
+                self.backend = MLXModelClient(self.config)
+            except ImportError as e:
+                raise ImportError(f"Failed to import MLX client: {e}. Ensure mlx-vlm is installed.")
+        else:
+            self.backend = None
+            self.client = OpenAI(base_url=self.config.base_url, api_key=self.config.api_key)
 
     def request(self, messages: list[dict[str, Any]]) -> ModelResponse:
         """
@@ -57,6 +67,9 @@ class ModelClient:
         Raises:
             ValueError: If the response cannot be parsed.
         """
+        if self.backend:
+            return self.backend.request(messages)
+
         response = self.client.chat.completions.create(
             messages=messages,
             model=self.config.model_name,

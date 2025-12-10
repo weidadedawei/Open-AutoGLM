@@ -1,6 +1,7 @@
 """Main PhoneAgent class for orchestrating phone automation."""
 
 import json
+import time
 import traceback
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -95,9 +96,13 @@ class PhoneAgent:
         self._step_count = 0
 
         # First step with user prompt
+        task_start_time = time.time()
         result = self._execute_step(task, is_first=True)
 
         if result.finished:
+            total_duration = time.time() - task_start_time
+            if self.agent_config.verbose:
+                print(f"\n⏱️ Total Task Time: {total_duration:.2f}s")
             return result.message or "Task completed"
 
         # Continue until finished or max steps reached
@@ -105,6 +110,9 @@ class PhoneAgent:
             result = self._execute_step(is_first=False)
 
             if result.finished:
+                total_duration = time.time() - task_start_time
+                if self.agent_config.verbose:
+                    print(f"\n⏱️ Total Task Time: {total_duration:.2f}s")
                 return result.message or "Task completed"
 
         return "Max steps reached"
@@ -137,6 +145,7 @@ class PhoneAgent:
         self, user_prompt: str | None = None, is_first: bool = False
     ) -> StepResult:
         """Execute a single step of the agent loop."""
+        start_time = time.time()
         self._step_count += 1
 
         # Capture current screen state
@@ -199,6 +208,11 @@ class PhoneAgent:
             print("-" * 50)
             print(f"🎯 {msgs['action']}:")
             print(json.dumps(action, ensure_ascii=False, indent=2))
+            
+            # Print execution time
+            duration = time.time() - start_time
+            print("-" * 50)
+            print(f"⏱️ Step Time: {duration:.2f}s")
             print("=" * 50 + "\n")
 
         # Remove image from context to save space
