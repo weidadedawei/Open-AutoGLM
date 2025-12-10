@@ -24,6 +24,32 @@ Phone Agent is a mobile intelligent assistant framework built on AutoGLM. It und
 
 `AutoGLM-Phone-9B` is optimized for Chinese mobile applications, while `AutoGLM-Phone-9B-Multilingual` supports English scenarios and is suitable for applications containing English or other language content.
 
+### 4-bit Quantized Model (For Mac MLX)
+
+For Mac users, we provide a 4-bit quantized model that significantly reduces memory usage (~6.6GB):
+
+| Model | Download Method |
+|-------|-----------------|
+| AutoGLM-Phone-9B-4bit | Self-quantization (see instructions below) |
+
+**Self-quantization method:**
+
+```bash
+# 1. Download the original model
+pip install -U "huggingface_hub[cli]"
+export HF_ENDPOINT=https://hf-mirror.com  # Optional: mirror for faster download in China
+huggingface-cli download --resume-download zai-org/AutoGLM-Phone-9B --local-dir ./models/AutoGLM-Phone-9B
+
+# 2. Quantize using mlx-vlm
+pip install mlx mlx-vlm
+python -m mlx_vlm.convert \
+    --hf-path ./models/AutoGLM-Phone-9B \
+    -q --q-bits 4 \
+    --mlx-path ./autoglm-9b-4bit
+```
+
+The quantized model is approximately 6.6GB and runs smoothly on Macs with 16GB memory.
+
 ## Environment Setup
 
 ### 1. Python Environment
@@ -107,6 +133,40 @@ python3 -m vllm.entrypoints.openai.api_server \
 - This model has the same architecture as `GLM-4.1V-9B-Thinking`. For detailed information about model deployment, you can also check [GLM-V](https://github.com/zai-org/GLM-V) for model deployment and usage guides.
 
 - After successful startup, the model service will be accessible at `http://localhost:8000/v1`. If you deploy the model on a remote server, access it using that server's IP address.
+
+### 4. Mac Local MLX Deployment (Recommended for Apple Silicon Users)
+
+For Mac users, you can use the Apple MLX framework for **fully local, offline inference** without starting a server:
+
+#### Install MLX Dependencies
+
+```bash
+pip install mlx mlx-vlm torch torchvision transformers
+```
+
+#### Run in Local Mode
+
+```bash
+# Use 4-bit quantized model (recommended, requires only 16GB memory)
+python main.py --local --model ./autoglm-9b-4bit "Open WeChat"
+
+# Use original model (requires 32GB+ memory)
+python main.py --local --model ./models/AutoGLM-Phone-9B "Open WeChat"
+```
+
+#### Performance Information
+
+| Configuration | Memory Usage | Inference Speed |
+|---------------|--------------|-----------------|
+| 4-bit Quantized | ~6.6GB | 13-18s/step |
+| Original Model | ~18GB | 10-15s/step |
+
+Benefits of MLX deployment:
+- 🔒 **Privacy Safe**: All data processed locally, never uploaded to cloud
+- 📴 **Offline Available**: Works without internet connection
+- 💰 **Zero Cost**: No API fees required
+
+> 💡 For detailed MLX deployment guide, see [docs/open_autoglm_guide_cn.md](docs/open_autoglm_guide_cn.md)
 
 ## Using AutoGLM
 
