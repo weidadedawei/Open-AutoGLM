@@ -44,7 +44,7 @@ export HF_ENDPOINT=https://hf-mirror.com  # 可选：国内镜像加速
 huggingface-cli download --resume-download zai-org/AutoGLM-Phone-9B --local-dir ./models/AutoGLM-Phone-9B
 
 # 2. 使用 mlx-vlm 进行 4-bit 量化
-pip install mlx mlx-vlm
+pip install mlx "git+https://github.com/Blaizzy/mlx-vlm.git@main"
 python -m mlx_vlm.convert \
     --hf-path ./models/AutoGLM-Phone-9B \
     -q --q-bits 4 \
