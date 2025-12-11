@@ -41,7 +41,7 @@ export HF_ENDPOINT=https://hf-mirror.com  # Optional: mirror for faster download
 huggingface-cli download --resume-download zai-org/AutoGLM-Phone-9B --local-dir ./models/AutoGLM-Phone-9B
 
 # 2. Quantize using mlx-vlm
-pip install mlx mlx-vlm
+pip install mlx "git+https://github.com/Blaizzy/mlx-vlm.git@main"
 python -m mlx_vlm.convert \
     --hf-path ./models/AutoGLM-Phone-9B \
     -q --q-bits 4 \
